@@ -1,3 +1,5 @@
 config.py
 *.pyc
 *.db
+__pycache__/*
+__pycache__
