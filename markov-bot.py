@@ -12,7 +12,7 @@ client = discord.Client()
 def allowed(x):
     if x == "🛑": return False
     if x == ":octagonal_sign:": return False
-    if x[0] == "<" and x[1] == "@": return False
+    # if x[0] == "<" and x[1] == "@": return False
     if x == "!markov": return False
     return True
 
@@ -97,48 +97,49 @@ def parse_emotes(msg):
                 con.commit()
                 #db.Insert("emotes", key = word.split(":")[1], value = word)
 
+async def handle_markov(message, args):
+    markov_word = None
+    if len(args) > 1:
+        markov_word = args[1]
+    await client.send_message(message.channel, make_message(markov_word))
+
+async def handle_help(message, args):
+    await client.send_message(message.channel,
+        "Commands: `!markov` - Generates random text based on collected probabilities\n" + \
+        "`!markov <starting word>` - Generates starting from a particular word\n" + \
+        "`!markov <limit>` - Generates random text with the given length\n" + \
+        "`!percents <word>` - Shows statistics on the given word")
+
+async def handle_percents(message, args):
+    percents = get_percents(args[1])
+    await client.send_message(message.channel, percents)
+
+async def handle_general_message(message, args):
+    markov_add(message.content);
+
 @client.event
 async def on_message(message):
-    print("Got message on channel ", message.channel, "from author", message.author, ":", message.content)
-    #print("Author: ", message.author, type(message.author))
-    #print("Channel: ", message.channel, type(message.channel))
+    print("RECV[%s:#%s](Author: %s): %s" % (message.server, message.channel, message.author,
+        message.content))
+
     if type(message.channel) == discord.channel.PrivateChannel:
         print("DISCARDING PRIVATE MESSAGE FROM", message.author)
         return
-    if "markov-bot" in str(message.author) or "MikuBot" in str(message.author):
-        print("Discarding self message")
+    if client.user.name in str(message.author) or client.user.display_name in str(message.author):
+        print("Discarding self message.")
         return
-    split = message.content.split()
-    if len(split) == 0: return
-    if split[0] == "!help":
-        await client.send_message(message.channel,
-            "Commands: `!markov` - Generates random text based on collected probabilities\n" + \
-            "`!markov <starting word>` - Generates starting from a particular word\n" + \
-            "`!markov <limit>` - Generates random text with the given length\n" + \
-            "`!percents <word>` - Shows statistics on the given word")
-    elif split[0] == "!markov":
-        args = message.content.split()
-        arg = False
-        if len(args) > 1:
-            arg = args[1]
-        print("Sending")
-        await client.send_message(message.channel, make_message(arg))
-    elif split[0] == "!percents" and len(split) > 1:
-        percents = get_percents(split[1])
-        await client.send_message(message.channel, percents)
-    elif split[0] == "!emotes":
-        await client.send_message(message.channel,
-            " ".join([x[0] for x in con.execute("SELECT value FROM emotes;").fetchall()]))
-    elif len(split) == 1:
-        if split[0] in ["no", "yes"]: return;
-        #res = db.Select("emotes", key = split[0])
-        res = con.execute("SELECT value FROM emotes WHERE key = ?", [split[0]]).fetchall()
-        if len(res) != 0:
-            #await client.send_message(message.channel, res[0]["value"])
-            await client.send_message(message.channel, res[0][0])
+    args = message.content.split()
+    if len(args) == 0: return
+    command = args[0]
+    handlers = {
+        "!markov": handle_markov,
+        "!help": handle_help,
+        "!percents": handle_percents
+    }
+    if command in handlers:
+        await handlers[args[0]](message, args)
     else:
-        markov_add(message.content);
-    parse_emotes(message.content);
+        await handle_general_message(message, args)
 
 def main():
     client.run(config.bot_token)
