@@ -1,0 +1,4 @@
+# Example configuration for the Discord Markov Bot
+
+# Token for the bot to connect to Discord
+bot_token = "THIS_IS_THE_BOT_TOKEN"
