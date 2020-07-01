@@ -56,6 +56,7 @@ def make_message(arg = False):
             words = [[x[0]] * int(x[1]) for x in words]
             flattened = []
             for x in words: flattened += x;
+            print(f"Flattened: {flattened}")
             word = random.choice(flattened)
         except:
             print(traceback.format_exc())
@@ -101,7 +102,7 @@ async def handle_markov(message, args):
     markov_word = None
     if len(args) > 1:
         markov_word = args[1]
-    await client.send_message(message.channel, make_message(markov_word))
+    await message.channel.send(make_message(markov_word))#client.send_message(message.channel, make_message(markov_word))
 
 async def handle_help(message, args):
     await client.send_message(message.channel,
@@ -119,10 +120,10 @@ async def handle_general_message(message, args):
 
 @client.event
 async def on_message(message):
-    print("RECV[%s:#%s](Author: %s): %s" % (message.server, message.channel, message.author,
+    print("RECV[%s:#%s](Author: %s): %s" % (message.guild, message.channel, message.author,
         message.content))
 
-    if type(message.channel) == discord.channel.PrivateChannel:
+    if type(message.channel) == discord.channel.DMChannel:
         print("DISCARDING PRIVATE MESSAGE FROM", message.author)
         return
     if client.user.name in str(message.author) or client.user.display_name in str(message.author):
